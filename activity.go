@@ -8,13 +8,23 @@ import (
 	"time"
 )
 
-type Activity struct {
+type activity interface {
+	CountAll(paginationLimit int) (int, error)
+	Search(start int, limit int) ([]ActivityOutput, error)
+	DateFilter(start time.Time, end time.Time) ([]ActivityOutput, error)
+}
+
+type activityClient struct {
+	auth *auth
+}
+
+type ActivityOutput struct {
 	ActivityId   int64  `json:"activityId,omitempty"`
 	ActivityName string `json:"activityName,omitempty"`
 }
 
-func (auth *Auth) CountAllActivities(paginationLimit int) (int, error) {
-	var activities []Activity
+func (a *activityClient) CountAll(paginationLimit int) (int, error) {
+	var activities []ActivityOutput
 	url := fmt.Sprintf("%s://%s%s", protocol, garmin_url, endpoint_search_activities)
 	start := 0
 
@@ -22,11 +32,13 @@ func (auth *Auth) CountAllActivities(paginationLimit int) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	auth.addHeader(request)
+
+	a.auth.addHeader(request)
+	a.auth.addHeader(request)
 	query := request.URL.Query()
 
 	for {
-		var tempActivites []Activity
+		var tempActivites []ActivityOutput
 
 		query.Set("start", fmt.Sprintf("%d", start))
 		query.Set("limit", fmt.Sprintf("%d", paginationLimit))
@@ -64,7 +76,7 @@ func (auth *Auth) CountAllActivities(paginationLimit int) (int, error) {
 
 }
 
-func (auth *Auth) SearchActivities(start int, limit int) (*[]Activity, error) {
+func (a *activityClient) Search(start int, limit int) ([]ActivityOutput, error) {
 	url := fmt.Sprintf("%s://%s%s", protocol, garmin_url, endpoint_search_activities)
 
 	if start <= 0 {
@@ -80,7 +92,7 @@ func (auth *Auth) SearchActivities(start int, limit int) (*[]Activity, error) {
 		return nil, err
 	}
 
-	auth.addHeader(request)
+	a.auth.addHeader(request)
 
 	query := request.URL.Query()
 	query.Add("start", fmt.Sprintf("%d", start))
@@ -102,16 +114,16 @@ func (auth *Auth) SearchActivities(start int, limit int) (*[]Activity, error) {
 		return nil, fmt.Errorf("cannot parse activities response data: %v", err)
 	}
 
-	var activities []Activity
+	var activities []ActivityOutput
 
 	if err := json.Unmarshal(responseData, &activities); err != nil {
 		return nil, fmt.Errorf("cannot parse activities structure data: %v", err)
 	}
 
-	return &activities, nil
+	return activities, nil
 }
 
-func (auth *Auth) ActivitiesDateFilter(start time.Time, end time.Time) (*[]Activity, error) {
+func (a *activityClient) DateFilter(start time.Time, end time.Time) ([]ActivityOutput, error) {
 	url := fmt.Sprintf("%s://%s%s", protocol, garmin_url, endpoint_search_activities)
 	formatLayout := "2006-01-02"
 
@@ -120,7 +132,7 @@ func (auth *Auth) ActivitiesDateFilter(start time.Time, end time.Time) (*[]Activ
 		return nil, err
 	}
 
-	auth.addHeader(request)
+	a.auth.addHeader(request)
 
 	query := request.URL.Query()
 	query.Add("startDate", fmt.Sprintf("%v", start.Format(formatLayout)))
@@ -142,11 +154,11 @@ func (auth *Auth) ActivitiesDateFilter(start time.Time, end time.Time) (*[]Activ
 		return nil, fmt.Errorf("cannot parse activities response data: %v", err)
 	}
 
-	var activities []Activity
+	var activities []ActivityOutput
 
 	if err := json.Unmarshal(responseData, &activities); err != nil {
 		return nil, fmt.Errorf("cannot parse activities structure data: %v", err)
 	}
 
-	return &activities, nil
+	return activities, nil
 }

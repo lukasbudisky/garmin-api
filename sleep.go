@@ -8,7 +8,15 @@ import (
 	"time"
 )
 
-func (auth *Auth) GetDailySleep(date string) (*json.RawMessage, error) {
+type sleep interface {
+	Daily(date string) (*json.RawMessage, error)
+}
+
+type sleepClient struct {
+	auth *auth
+}
+
+func (s *sleepClient) Daily(date string) (*json.RawMessage, error) {
 	url := fmt.Sprintf("%s://%s%s", protocol, garmin_url, endpoint_daily_sleep)
 
 	request, err := http.NewRequest(http.MethodGet, url, nil)
@@ -26,7 +34,7 @@ func (auth *Auth) GetDailySleep(date string) (*json.RawMessage, error) {
 	query.Add("date", parsedTime.Format(parseLayout))
 	request.URL.RawQuery = query.Encode()
 
-	auth.addHeader(request)
+	s.auth.addHeader(request)
 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
