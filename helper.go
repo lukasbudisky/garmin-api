@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-func (auth *Auth) addHeader(request *http.Request) {
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *auth.Token))
+func (auth *auth) addHeader(request *http.Request) {
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *auth.token))
 	request.Header.Add("Content-Type", "application/json")
 }
 

@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-type Auth struct {
-	Token *string
+type auth struct {
+	token *string
 }
 
 func GetAccessToken(apiKey string) (*string, error) {

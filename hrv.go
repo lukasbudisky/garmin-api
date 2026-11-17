@@ -8,7 +8,15 @@ import (
 	"time"
 )
 
-func (auth *Auth) GetDailyHrv(date string) (*json.RawMessage, error) {
+type hrv interface {
+	Daily(date string) (*json.RawMessage, error)
+}
+
+type hrvClient struct {
+	auth *auth
+}
+
+func (h *hrvClient) Daily(date string) (*json.RawMessage, error) {
 
 	parseLayout := "2006-01-02"
 	parsedTime, err := time.Parse(parseLayout, date)
@@ -26,7 +34,7 @@ func (auth *Auth) GetDailyHrv(date string) (*json.RawMessage, error) {
 	query.Add("date", parsedTime.Format(parseLayout))
 	request.URL.RawQuery = query.Encode()
 
-	auth.addHeader(request)
+	h.auth.addHeader(request)
 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
